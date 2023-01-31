@@ -36,7 +36,7 @@ def single_level_df_to_excel(df, filename = 'pandas_simple.xlsx', sort_df = True
     worksheet = writer.sheets[sheet_name]
 
     header_format = workbook.add_format({
-        'bg_color': '#4F818D',
+        'bg_color': '#4F81BD',
         'bold': True,
         'font_color': '#FFFFFF',
         'border_color': '#FFFFFF',
