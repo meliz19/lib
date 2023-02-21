@@ -52,7 +52,7 @@ def write_column_headers(df, worksheet, header_format):
         # start_row = 0; start_col = idx; cell_value = col_name; cell_format = header_format
         worksheet.write(0, idx, col_name, header_format)
 
-def write_merged_row_data(df, sortby, worksheet, row_format1, row_format2):
+def write_merged_row_data(df, sortby, worksheet, row_format1, row_format2, writer, sheet_name):
     # write the data rows
     cols = sortby if sortby is not None else list(df.columns)
     row_padding = df.columns.nlevels + 1 if df.columns.nlevels >1 else 1 # accounts for column headers
@@ -70,8 +70,23 @@ def write_merged_row_data(df, sortby, worksheet, row_format1, row_format2):
             else:
                 # print(f'start_row: {start_row}\t{type({start_row})}\nstart_col: {start_col}\t{type(start_col)}\nend_row: {end_row}\t{type(start_col)}\nend_col: {end_col}\t{type(end_col)}\nval: {val}\t{type(val)}')
                 worksheet.merge_range(start_row, start_col, end_row, end_col, val, row_format1 if idx%2==0 else row_format2)
+    if sortby:
+        df_remaining = df.reset_index().drop(columns=['index'] + cols)
+        df_remaining.to_excel(writer, 
+            sheet_name=sheet_name, 
+            index=False, 
+            header=False, 
+            merge_cells=False,
+            startrow=row_padding,
+            startcol=len(sortby))
+        for idx in range(row_padding, df_remaining.shape[0]+row_padding):
+            start_row = end_row = idx
+            start_col = 0
+            end_col = len(df.columns)-1
+            worksheet.conditional_format(start_row, start_col,end_row, end_col, 
+                {'type': 'no_errors', 'format': row_format1 if idx%2==0 else row_format2})
 
-def write_grpby_color_row_data(df, sortby, worksheet, row_format1, row_format2):
+def write_grpby_color_row_data(df, sortby, worksheet, row_format1, row_format2, writer, sheet_name):
     # write the data rows
     cols = sortby if sortby is not None else list(df.columns)
     row_padding = df.columns.nlevels + 1 if df.columns.nlevels >1 else 1 # accounts for column headers
@@ -85,6 +100,21 @@ def write_grpby_color_row_data(df, sortby, worksheet, row_format1, row_format2):
             end_row = int(row_value[-2] + row_padding)
             for row_idx in range(start_row, end_row+1):
                 worksheet.write(row_idx, col_idx, val, row_format1 if idx%2==0 else row_format2)
+    if sortby:
+        df_remaining = df.reset_index().drop(columns=['index'] + cols)
+        df_remaining.to_excel(writer, 
+            sheet_name=sheet_name, 
+            index=False, 
+            header=False, 
+            merge_cells=False,
+            startrow=row_padding,
+            startcol=len(sortby))
+        for idx in range(row_padding, df_remaining.shape[0]+row_padding):
+            start_row = end_row = idx
+            start_col = 0
+            end_col = len(df.columns)-1
+            worksheet.conditional_format(start_row, start_col,end_row, end_col, 
+                {'type': 'no_errors', 'format': row_format1 if idx%2==0 else row_format2})
 
 def df_to_excel_sheet(df, writer, workbook, sheet_name, sortby, merge_cells):
     '''
@@ -108,9 +138,9 @@ def df_to_excel_sheet(df, writer, workbook, sheet_name, sortby, merge_cells):
 
     # write the data rows
     if merge_cells:
-        write_merged_row_data(df, sortby, worksheet, row_format1, row_format2)
+        write_merged_row_data(df, sortby, worksheet, row_format1, row_format2, writer, sheet_name)
     else:
-        write_grpby_color_row_data(df, sortby, worksheet, row_format1, row_format2)
+        write_grpby_color_row_data(df, sortby, worksheet, row_format1, row_format2, writer, sheet_name)
 
     print(f'Sheet ({sheet_name}) created.')
 
